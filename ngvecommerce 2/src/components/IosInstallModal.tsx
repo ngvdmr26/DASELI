@@ -38,7 +38,6 @@ export const IosInstallModal: React.FC<IosInstallModalProps> = ({ isOpen, onClos
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
 
   // Touch gesture helpers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -142,71 +141,92 @@ export const IosInstallModal: React.FC<IosInstallModalProps> = ({ isOpen, onClos
 
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      {/* Toast OUTSIDE the frame */}
-      <AnimatePresence>
-        {showToast && (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="ios-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+          {/* Toast OUTSIDE the frame */}
+          <AnimatePresence>
+            {showToast && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="mb-3 flex items-center gap-2.5 rounded-full bg-white/[0.12] px-5 py-2.5 text-[12px] font-medium text-white/90 shadow-lg backdrop-blur-xl pointer-events-none border border-white/[0.08]"
+              >
+                <HelpCircle className="h-4 w-4 text-[#C9A0FF]" />
+                <span>Раздвигайте двумя пальцами для приближения</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Modal content with animation */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-3 flex items-center gap-2.5 rounded-full bg-white/[0.12] px-5 py-2.5 text-[12px] font-medium text-white/90 shadow-lg backdrop-blur-xl pointer-events-none border border-white/[0.08]"
+            key="ios-modal-content"
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 24 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <HelpCircle className="h-4 w-4 text-[#C9A0FF]" />
-            <span>Раздвигайте двумя пальцами для приближения</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Gradient border wrapper */}
-      <div
-        ref={containerRef}
-        className="relative rounded-[28px] p-[5px] shadow-[0_24px_60px_rgba(61,13,107,0.45),0_0_80px_rgba(123,47,190,0.15)] max-w-[90vw] max-h-[80vh]"
-        style={{
-          background: 'linear-gradient(135deg, #3D0D6B 0%, #7B2FBE 25%, #3D0D6B 45%, #9B4DDB 65%, #3D0D6B 85%, #6A1FB0 100%)',
-        }}
-      >
-        {/* Inner content with its own bg */}
-        <div className="relative rounded-[24px] overflow-hidden bg-slate-900 flex flex-col items-center justify-center">
-          {/* Close Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-3 right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/70 active:scale-95 border border-white/10 cursor-pointer"
-            aria-label="Закрыть инструкцию"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {/* Gesture Image Container */}
-          <div
-            className={`relative overflow-hidden touch-none select-none ${
-              scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            <motion.img
-              ref={imageRef}
-              src="/ios-install-guide.png"
-              alt="Инструкция по установке на iOS"
-              className="block max-w-full max-h-[78vh] w-auto h-auto object-contain pointer-events-none select-none"
-              animate={{
-                scale: scale,
-                x: position.x,
-                y: position.y
+            {/* Gradient border wrapper */}
+            <div
+              ref={containerRef}
+              className="relative rounded-[28px] p-[5px] shadow-[0_24px_60px_rgba(61,13,107,0.45),0_0_80px_rgba(123,47,190,0.15)] max-w-[90vw] max-h-[80vh]"
+              style={{
+                background: 'linear-gradient(135deg, #3D0D6B 0%, #7B2FBE 25%, #3D0D6B 45%, #9B4DDB 65%, #3D0D6B 85%, #6A1FB0 100%)',
               }}
-              transition={{ type: "spring", stiffness: 350, damping: 35, mass: 0.5 }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+            >
+              {/* Close button — outside the frame, on the corner */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute -top-3 -right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#3D0D6B] shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all hover:scale-110 active:scale-90 cursor-pointer"
+                aria-label="Закрыть инструкцию"
+              >
+                <X className="h-5 w-5" strokeWidth={2.5} />
+              </button>
+
+              {/* Inner content */}
+              <div className="relative rounded-[24px] overflow-hidden bg-slate-900 flex flex-col items-center justify-center">
+                {/* Gesture Image Container */}
+                <div
+                  className={`relative overflow-hidden touch-none select-none ${
+                    scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
+                  }`}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                >
+                  <motion.img
+                    ref={imageRef}
+                    src="/ios-install-guide.png"
+                    alt="Инструкция по установке на iOS"
+                    className="block max-w-full max-h-[78vh] w-auto h-auto object-contain pointer-events-none select-none"
+                    animate={{
+                      scale: scale,
+                      x: position.x,
+                      y: position.y
+                    }}
+                    transition={{ type: "spring", stiffness: 350, damping: 35, mass: 0.5 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
