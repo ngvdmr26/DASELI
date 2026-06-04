@@ -7,7 +7,7 @@ const isIos = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
 
 // Temporary test switch: set to false to restore Android/Desktop beforeinstallprompt behavior.
-const forceIphoneInstallHintForTesting = false;
+const forceIphoneInstallHintForTesting = true;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
