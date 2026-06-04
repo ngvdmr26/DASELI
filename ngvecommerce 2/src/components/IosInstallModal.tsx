@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ZoomIn, ZoomOut, RotateCcw, HelpCircle } from 'lucide-react';
+import { X, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface IosInstallModalProps {
@@ -139,111 +139,71 @@ export const IosInstallModal: React.FC<IosInstallModalProps> = ({ isOpen, onClos
     startRef.current.isPanning = false;
   };
 
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(4, prev + 0.5));
-  };
 
-  const handleZoomOut = () => {
-    setScale(prev => {
-      const next = Math.max(1, prev - 0.5);
-      if (next === 1) {
-        setPosition({ x: 0, y: 0 });
-      }
-      return next;
-    });
-  };
-
-  const handleReset = () => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+      {/* Toast OUTSIDE the frame */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-3 flex items-center gap-2.5 rounded-full bg-white/[0.12] px-5 py-2.5 text-[12px] font-medium text-white/90 shadow-lg backdrop-blur-xl pointer-events-none border border-white/[0.08]"
+          >
+            <HelpCircle className="h-4 w-4 text-[#C9A0FF]" />
+            <span>Раздвигайте двумя пальцами для приближения</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gradient border wrapper */}
+      <div
         ref={containerRef}
-        className="relative bg-white rounded-2xl overflow-hidden border-[6px] border-[#3D0D6B] ring-2 ring-[#9E7B9B]/40 shadow-[0_24px_50px_rgba(61,13,107,0.4)] max-w-[90vw] max-h-[85vh] flex flex-col items-center justify-center"
+        className="relative rounded-[28px] p-[5px] shadow-[0_24px_60px_rgba(61,13,107,0.45),0_0_80px_rgba(123,47,190,0.15)] max-w-[90vw] max-h-[80vh]"
+        style={{
+          background: 'linear-gradient(135deg, #3D0D6B 0%, #7B2FBE 25%, #3D0D6B 45%, #9B4DDB 65%, #3D0D6B 85%, #6A1FB0 100%)',
+        }}
       >
-        {/* Floating Help/Toast Indicator */}
-        <AnimatePresence>
-          {showToast && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, x: "-50%" }}
-              animate={{ opacity: 1, y: 0, x: "-50%" }}
-              exit={{ opacity: 0, y: -10, x: "-50%" }}
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#3D0D6B]/95 text-white text-[11px] font-medium px-4 py-2 rounded-full shadow-lg backdrop-blur-sm pointer-events-none whitespace-nowrap border border-[#9E7B9B]/20"
-            >
-              <HelpCircle className="h-3.5 w-3.5 text-[#9E7B9B]" />
-              <span>Раздвигайте двумя пальцами для приближения</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Inner content with its own bg */}
+        <div className="relative rounded-[24px] overflow-hidden bg-slate-900 flex flex-col items-center justify-center">
+          {/* Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/70 active:scale-95 border border-white/10 cursor-pointer"
+            aria-label="Закрыть инструкцию"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
-        {/* Floating Top Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-3 right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#3D0D6B] shadow-lg backdrop-blur-sm transition-all hover:scale-105 active:scale-95 border border-[#3D0D6B]/15 cursor-pointer"
-          aria-label="Закрыть инструкцию"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Gesture Image Container */}
-        <div 
-          className={`relative overflow-hidden touch-none bg-slate-900 select-none ${
-            scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
-          }`}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          <motion.img
-            ref={imageRef}
-            src="/ios-install-guide.png"
-            alt="Инструкция по установке на iOS"
-            className="block max-w-full max-h-[72vh] w-auto h-auto object-contain pointer-events-none select-none"
-            animate={{ 
-              scale: scale,
-              x: position.x,
-              y: position.y 
-            }}
-            transition={{ type: "spring", stiffness: 350, damping: 35, mass: 0.5 }}
-          />
-
-          {/* Floating controls overlay */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/65 p-1 rounded-full backdrop-blur-md z-30 border border-white/10 select-none pointer-events-auto">
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              disabled={scale === 1}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
-              title="Уменьшить"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="px-2 text-[10px] font-semibold text-white hover:bg-white/15 rounded-md transition-all h-8 flex items-center justify-center gap-1"
-              title="Сбросить масштаб"
-            >
-              <RotateCcw className="h-3 w-3" />
-              {Math.round(scale * 100)}%
-            </button>
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              disabled={scale === 4}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-90"
-              title="Увеличить"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
+          {/* Gesture Image Container */}
+          <div
+            className={`relative overflow-hidden touch-none select-none ${
+              scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
+            }`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            <motion.img
+              ref={imageRef}
+              src="/ios-install-guide.png"
+              alt="Инструкция по установке на iOS"
+              className="block max-w-full max-h-[78vh] w-auto h-auto object-contain pointer-events-none select-none"
+              animate={{
+                scale: scale,
+                x: position.x,
+                y: position.y
+              }}
+              transition={{ type: "spring", stiffness: 350, damping: 35, mass: 0.5 }}
+            />
           </div>
         </div>
       </div>
