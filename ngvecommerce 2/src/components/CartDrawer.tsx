@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CartDrawer = () => {
-  const { isCartOpen, setCartOpen, cart, updateCartQuantity, removeFromCart } = useApp();
+  const { isCartOpen, setCartOpen, cart, updateCartQuantity, removeFromCart, currentUser, setAuthOpen } = useApp();
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
@@ -41,6 +41,12 @@ export const CartDrawer = () => {
   };
 
   const handleCheckout = () => {
+    if (!currentUser) {
+      // Close cart, open auth modal
+      setCartOpen(false);
+      setTimeout(() => setAuthOpen(true), 300);
+      return;
+    }
     setIsCheckoutFinished(true);
   };
 
@@ -255,8 +261,17 @@ export const CartDrawer = () => {
                       onClick={handleCheckout}
                       className="w-full py-3 sm:py-4 bg-accent hover:bg-accent-hover text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg active:scale-[0.98] cursor-pointer"
                     >
-                      Перейти к оплате <ArrowRight className="w-4 h-4" />
+                      {currentUser ? (
+                        <>Перейти к оплате <ArrowRight className="w-4 h-4" /></>
+                      ) : (
+                        <>Войти и оформить заказ <ArrowRight className="w-4 h-4" /></>
+                      )}
                     </button>
+                    {!currentUser && (
+                      <p className="text-center text-[10px] text-muted mt-2">
+                        Для оформления заказа необходим аккаунт
+                      </p>
+                    )}
                   </div>
                 </div>
               </>

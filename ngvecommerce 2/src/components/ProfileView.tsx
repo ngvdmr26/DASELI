@@ -92,13 +92,21 @@ const initialNotifications = [
 ];
 
 export const ProfileView = () => {
-  const { setActiveTab } = useApp();
+  const { setActiveTab, currentUser, setAuthOpen, setCurrentUser } = useApp();
   const [profileTab, setProfileTab] = useState<'purchases' | 'waiting' | 'reviews' | 'returns' | 'notifications'>('purchases');
   
-  // States to make them fully dynamic/interactive
-  const [userName, setUserName] = useState('Мадина Нагоева');
+  // Use real user name from auth context
+  const [userName, setUserName] = useState(currentUser?.name || '');
   const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState('Мадина Нагоева');
+  const [tempName, setTempName] = useState(currentUser?.name || '');
+
+  // Sync name if user changes
+  React.useEffect(() => {
+    if (currentUser?.name) {
+      setUserName(currentUser.name);
+      setTempName(currentUser.name);
+    }
+  }, [currentUser?.name]);
 
   const [purchases, setPurchases] = useState(initialPurchases);
   const [notifications, setNotifications] = useState(initialNotifications);
@@ -147,6 +155,52 @@ export const ProfileView = () => {
 
   const unreadNotificationsCount = notifications.filter(n => n.unread).length;
 
+  // ── Auth Gate ─────────────────────────────────────────────────────────────
+  if (!currentUser) {
+    return (
+      <div className="py-10 max-w-md mx-auto px-4 flex flex-col items-center text-center">
+        <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-[#9E7B9B]/15 to-[#7B5778]/10 flex items-center justify-center mb-6 shadow-sm">
+          <svg className="w-9 h-9 text-[#9E7B9B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+        </div>
+
+        <h2 className="text-2xl font-serif font-semibold text-[#2D252E] mb-2">Личный кабинет</h2>
+        <p className="text-sm text-[#827585] font-light leading-relaxed mb-8 max-w-[260px]">
+          Войдите или зарегистрируйтесь, чтобы видеть историю заказов, избранное и персональные предложения
+        </p>
+
+        <div className="flex flex-col gap-3 w-full">
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#9E7B9B] to-[#7B5778] text-white text-sm font-semibold shadow-lg shadow-[#9E7B9B]/25 hover:shadow-[#9E7B9B]/40 transition-shadow cursor-pointer"
+          >
+            Войти / Зарегистрироваться
+          </button>
+          <button
+            onClick={() => setActiveTab('home')}
+            className="w-full py-3 rounded-2xl border-2 border-[#E8DEEB] text-[#2D252E] text-sm font-medium hover:border-[#9E7B9B] hover:bg-[#F6F2F8] transition-all cursor-pointer"
+          >
+            Продолжить без аккаунта
+          </button>
+        </div>
+
+        <div className="mt-10 grid grid-cols-3 gap-3 w-full">
+          {[
+            { icon: '🛍️', label: 'История заказов' },
+            { icon: '❤️', label: 'Избранное' },
+            { icon: '🎁', label: 'Бонусы и скидки' },
+          ].map(item => (
+            <div key={item.label} className="bg-white rounded-2xl p-4 border border-[#E8DEEB] shadow-sm flex flex-col items-center gap-2 opacity-50">
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-[10px] font-medium text-[#827585] text-center leading-tight">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-2.5 max-w-5xl mx-auto px-1 tracking-tight">
       {/* Profile Header Block */}
@@ -156,8 +210,12 @@ export const ProfileView = () => {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-accent/10 border-2 border-accent text-accent rounded-full flex items-center justify-center text-2xl font-serif font-bold shadow-sm relative">
-              {userName.substring(0, 2).toUpperCase()}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-accent/10 border-2 border-accent text-accent rounded-full flex items-center justify-center text-2xl font-serif font-bold shadow-sm relative overflow-hidden">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                userName.substring(0, 2).toUpperCase()
+              )}
               <div className="absolute bottom-0 right-0 bg-accent text-white p-1 rounded-full border border-white shadow-sm">
                 <Award className="w-3.5 h-3.5" />
               </div>
