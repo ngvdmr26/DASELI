@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Heart, ShoppingBag } from "lucide-react";
+import { Search, Heart, ShoppingBag, User, LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 export const Header = () => {
@@ -11,6 +11,9 @@ export const Header = () => {
     setFilters,
     setActiveTab,
     triggerCartBounce,
+    currentUser,
+    setCurrentUser,
+    setAuthOpen,
   } = useApp();
 
   const handleGenderClick = (gender: "women" | "men") => {
@@ -202,6 +205,43 @@ export const Header = () => {
             </span>
           )}
         </button>
+        {/* Auth Button */}
+        {currentUser ? (
+          <div className="relative group">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className="flex items-center gap-2 text-[#1A1A1A] hover:text-accent transition-colors cursor-pointer p-1"
+              aria-label="Профиль"
+            >
+              {currentUser.avatar ? (
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-7 h-7 rounded-full object-cover border-2 border-accent/30" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-accent/10 border-2 border-accent/30 text-accent flex items-center justify-center text-xs font-bold">
+                  {currentUser.name.substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="hidden lg:inline text-xs font-semibold truncate max-w-[80px]">{currentUser.name.split(' ')[0]}</span>
+            </button>
+            {/* Logout tooltip */}
+            <div className="absolute right-0 top-full mt-2 hidden group-hover:flex flex-col bg-white border border-border shadow-lg rounded-xl p-1 w-36 z-50">
+              <button
+                onClick={() => setCurrentUser(null)}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Выйти
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="flex items-center gap-1.5 text-[#1A1A1A] hover:text-accent transition-colors cursor-pointer p-1"
+            aria-label="Войти"
+          >
+            <User className="w-5.5 h-5.5 lg:w-5 lg:h-5" strokeWidth={1.5} />
+            <span className="hidden lg:inline text-xs font-semibold">Войти</span>
+          </button>
+        )}
       </div>
     </header>
   );

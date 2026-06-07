@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import { Product, CartItem, OrderData, OrderResult } from "../types";
 import { useProducts } from "../hooks/useProducts";
 import { api } from "../services/api";
+import { AuthUser } from "../components/AuthModal";
 
 interface FiltersState {
   gender: "all";
@@ -31,6 +32,12 @@ interface AppContextType {
   setSelectedProduct: (product: Product | null) => void;
   setFilters: React.Dispatch<React.SetStateAction<FiltersState>>;
   setActiveTab: (tab: string) => void;
+
+  // Auth
+  currentUser: AuthUser | null;
+  setCurrentUser: (user: AuthUser | null) => void;
+  isAuthOpen: boolean;
+  setAuthOpen: (open: boolean) => void;
 
   // Custom helpers
   addToCart: (
@@ -89,6 +96,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isMobileFiltersOpenState, setMobileFiltersOpenState] = useState(false);
   const [selectedProductState, setSelectedProductState] =
     useState<Product | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthOpen, setAuthOpen] = useState(false);
 
   const setCartOpen = (open: boolean) => {
     setCartOpenState(open);
@@ -337,6 +346,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setSelectedProduct,
         setFilters,
         setActiveTab,
+        currentUser,
+        setCurrentUser,
+        isAuthOpen,
+        setAuthOpen,
         addToCart,
         removeFromCart,
         updateCartQuantity,

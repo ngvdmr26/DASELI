@@ -13,6 +13,7 @@ import { CategoriesView } from "./components/CategoriesView";
 import { ProfileView } from "./components/ProfileView";
 import { InstallHint } from "./components/InstallHint";
 import { CartAddedToast } from "./components/CartAddedToast";
+import { AuthModal } from "./components/AuthModal";
 import {
   Heart,
   ShoppingBag,
@@ -26,6 +27,9 @@ const InnerApp = () => {
     clearFilters,
     setSelectedProduct,
     products,
+    isAuthOpen,
+    setAuthOpen,
+    setCurrentUser,
   } = useApp();
 
   // Favorite items matching
@@ -146,6 +150,12 @@ const InnerApp = () => {
 
       <MobileBottomNav />
       <InstallHint />
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setAuthOpen(false)}
+        onLogin={(user) => { setCurrentUser(user); setAuthOpen(false); }}
+      />
     </div>
   );
 };
