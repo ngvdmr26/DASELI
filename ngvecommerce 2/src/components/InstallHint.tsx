@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Download, MonitorDown, Share, Smartphone, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { IosInstallModal } from './IosInstallModal';
+import { detectBrowser, browserNames, browserSupportsNativeInstall } from './IosInstallModal';
 
-const isIos = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-
-// Temporary test switch: set to false to restore Android/Desktop beforeinstallprompt behavior.
-const forceIphoneInstallHintForTesting = true;
+const isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (window.navigator as any).standalone;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -18,23 +17,24 @@ export const InstallHint: React.FC = () => {
   const [visible, setVisible] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setInstalled] = useState(false);
-  const [isIosModalOpen, setIsIosModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [browser] = useState(() => detectBrowser());
 
-  const showIphoneHint = forceIphoneInstallHintForTesting || isIos();
+  // Browsers that need the manual guide (no native beforeinstallprompt)
+  const needsManualGuide = !browserSupportsNativeInstall(browser);
 
   useEffect(() => {
     const standalone = isStandalone();
     setInstalled(standalone);
 
-    if (showIphoneHint && !standalone) {
+    if (needsManualGuide && !standalone) {
       setVisible(true);
     }
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
-
-      if (!forceIphoneInstallHintForTesting && !standalone) {
+      if (!needsManualGuide && !standalone) {
         setVisible(true);
       }
     };
@@ -49,32 +49,44 @@ export const InstallHint: React.FC = () => {
     window.addEventListener('appinstalled', handleInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeBeforeInstallPromptCheck);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleInstalled);
     };
-    
-    // Auxiliary helper ref for event removal
-    function handleBeforeBeforeInstallPromptCheck(e: Event) {
-      handleBeforeInstallPrompt(e);
-    }
-  }, [showIphoneHint]);
+  }, [needsManualGuide]);
 
   const handleInstall = async () => {
-    if (showIphoneHint) {
-      setIsIosModalOpen(true);
+    if (needsManualGuide) {
+      setIsModalOpen(true);
       return;
     }
-
     if (!installPrompt) return;
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
-    if (choice.outcome === 'accepted') {
-      setVisible(false);
-    }
+    if (choice.outcome === 'accepted') setVisible(false);
     setInstallPrompt(null);
   };
 
-  if (isInstalled && !isIosModalOpen) return null;
+  const browserLabel = browserNames[browser] ?? 'браузере';
+
+  // Hint subtitle text — adapted per browser type
+  const hintSubtitle = (() => {
+    if (needsManualGuide) {
+      if (browser === 'safari') {
+        return (
+          <span className="inline-flex flex-wrap items-center gap-1">
+            Нажмите <Share className="h-3.5 w-3.5" /> и выберите «На экран Домой»
+          </span>
+        );
+      }
+      return `Покажем инструкцию для ${browserLabel} — займёт 3 секунды`;
+    }
+    if (installPrompt) {
+      return 'Добавьте магазин на рабочий стол в один шаг.';
+    }
+    return 'Кнопка появится, когда браузер подтвердит готовность PWA.';
+  })();
+
+  if (isInstalled && !isModalOpen) return null;
 
   return (
     <>
@@ -98,29 +110,19 @@ export const InstallHint: React.FC = () => {
 
             <div className="flex gap-3 pr-8">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                {showIphoneHint ? <Smartphone className="h-5 w-5" /> : <MonitorDown className="h-5 w-5" />}
+                {needsManualGuide ? <Smartphone className="h-5 w-5" /> : <MonitorDown className="h-5 w-5" />}
               </div>
               <div className="min-w-0">
                 <div className="mb-1 text-sm font-semibold text-main">Установить DASELI</div>
-                <div className="text-xs leading-relaxed text-muted">
-                  {showIphoneHint ? (
-                    <span className="inline-flex flex-wrap items-center gap-1">
-                      Откроем короткую инструкцию для Safari: <Share className="h-3.5 w-3.5" /> и «На экран Домой».
-                    </span>
-                  ) : installPrompt ? (
-                    'Добавьте магазин на рабочий стол телефона или ПК в один шаг.'
-                  ) : (
-                    'Кнопка появится, когда браузер подтвердит готовность PWA к установке.'
-                  )}
-                </div>
+                <div className="text-xs leading-relaxed text-muted">{hintSubtitle}</div>
                 <button
                   type="button"
                   onClick={handleInstall}
-                  disabled={!showIphoneHint && !installPrompt}
+                  disabled={!needsManualGuide && !installPrompt}
                   className="mt-3 inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-accent-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Download className="h-4 w-4" />
-                  {showIphoneHint ? 'Показать инструкцию' : 'Установить'}
+                  {needsManualGuide ? 'Показать инструкцию' : 'Установить'}
                 </button>
               </div>
             </div>
@@ -128,7 +130,7 @@ export const InstallHint: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <IosInstallModal isOpen={isIosModalOpen} onClose={() => setIsIosModalOpen(false)} />
+      <IosInstallModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );
 };
